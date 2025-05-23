@@ -1,0 +1,13 @@
+/tf-azure/terraform.tfstate
+/tf-azure/terraform.tfstate.backup
+/tf-azure/.terraform.lock.hcl
+/tf-azure/.terraform
+/tf-azure/app/node_modules
+/tf-azure/app/package-lock.json
+
+/tf-docker/terraform.tfstate
+/tf-docker/terraform.tfstate.backup
+/tf-docker/.terraform.lock.hcl
+/tf-docker/.terraform
+
+/.terraform

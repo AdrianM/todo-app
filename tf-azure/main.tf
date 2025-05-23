@@ -23,64 +23,79 @@ resource "azurerm_resource_group" "example" {
   location = "North Europe"
 }
 
+########################################################
+### Postgres ############################################
+########################################################
 resource "random_string" "suffix" {
   length  = 8
   special = false
   upper   = false
 }
 
-resource "azurerm_postgresql_flexible_server" "example" {
-  name                   = "example-psqlflexibleserver-${random_string.suffix.result}"
-  resource_group_name    = azurerm_resource_group.example.name
-  location               = azurerm_resource_group.example.location
-  version                = "12"
-  administrator_login    = "psqladmin"
-  administrator_password = "amo-1234567890" // TODO AMO Change to new password
-  storage_mb             = 32768
-  sku_name               = "GP_Standard_D4s_v3"
-}
+# resource "azurerm_postgresql_flexible_server" "example" {
+#   name                   = "example-psqlflexibleserver-${random_string.suffix.result}"
+#   resource_group_name    = azurerm_resource_group.example.name
+#   location               = azurerm_resource_group.example.location
+#   version                = "12"
+#   administrator_login    = "psqladmin"
+#   administrator_password = "amo-1234567890" // TODO AMO Change to new password
+#   storage_mb             = 32768
+#   sku_name               = "GP_Standard_D4s_v3"
 
-resource "azurerm_postgresql_flexible_server_database" "example" {
-  name      = "exampledb"
-  server_id = azurerm_postgresql_flexible_server.example.id
-  collation = "en_US.utf8"
-  charset   = "UTF8"
-
-  # prevent the possibility of accidental data loss
-#   lifecycle {
-#     prevent_destroy = true
+#   high_availability {
+#     mode                      = "ZoneRedundant"
+#     standby_availability_zone = 2
 #   }
-}
+# }
 
-resource "azurerm_service_plan" "example" {
-  name                = "example-service-plan"
+# resource "azurerm_postgresql_flexible_server_database" "example" {
+#   name      = "exampledb"
+#   server_id = azurerm_postgresql_flexible_server.example.id
+#   collation = "en_US.utf8"
+#   charset   = "UTF8"
+
+#   # prevent the possibility of accidental data loss
+# #   lifecycle {
+# #     prevent_destroy = true
+# #   }
+# }
+
+########################################################
+### Web App ############################################
+########################################################
+resource "azurerm_service_plan" "appserviceplan" {
+  name                = "appserviceplan-${random_string.suffix.result}"
   resource_group_name = azurerm_resource_group.example.name
   location           = azurerm_resource_group.example.location
   os_type            = "Linux"
   sku_name           = "B1"
 }
 
-resource "azurerm_linux_web_app" "example" {
-  name                = "example-node-app-${random_string.suffix.result}"
+resource "azurerm_linux_web_app" "webapp" {
+  name                = "webapp-node-app-${random_string.suffix.result}"
   resource_group_name = azurerm_resource_group.example.name
   location           = azurerm_resource_group.example.location
-  service_plan_id    = azurerm_service_plan.example.id
+  service_plan_id    = azurerm_service_plan.appserviceplan.id
 
   site_config {
     application_stack {
-      node_version = "18-lts"
+      node_version = "16-lts"
     }
+
+    # app_command_line = "cd tf-azure/app && npm install && npm start"
   }
 
   app_settings = {
-    "WEBSITE_NODE_DEFAULT_VERSION" = "~18"
+    "WEBSITE_NODE_DEFAULT_VERSION" = "~16"
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
+    "WEBSITE_RUN_FROM_PACKAGE" = "1"
   }
 }
 
-resource "azurerm_web_app_deployment_source_control" "example" {
-  app_id             = azurerm_linux_web_app.example.id
-  repo_url           = "https://github.com/yourusername/your-repo"  # You'll need to update this
+resource "azurerm_app_service_source_control" "sourcecontrol" {
+  app_id             = azurerm_linux_web_app.webapp.id
+#   repo_url           = "https://github.com/AdrianM/todo-app.git"  # You'll need to update this
+  repo_url           = "https://github.com/Azure-Samples/nodejs-docs-hello-world"
   branch             = "main"
   use_manual_integration = true
   use_mercurial      = false

@@ -72,7 +72,7 @@ resource "azurerm_service_plan" "appserviceplan" {
 }
 
 resource "azurerm_linux_web_app" "webapp" {
-  name                = "webapp-node-app-${random_string.suffix.result}"
+  name                = "webapp-node-app-3-${random_string.suffix.result}"
   resource_group_name = azurerm_resource_group.example.name
   location           = azurerm_resource_group.example.location
   service_plan_id    = azurerm_service_plan.appserviceplan.id
@@ -82,6 +82,7 @@ resource "azurerm_linux_web_app" "webapp" {
       node_version = "16-lts"
     }
 
+    app_command_line = "ls -l && node --version && npm -version && npm start"
     # app_command_line = "cd tf-azure/app && npm install && npm start"
   }
 
@@ -89,12 +90,14 @@ resource "azurerm_linux_web_app" "webapp" {
     "WEBSITE_NODE_DEFAULT_VERSION" = "~16"
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"
     "WEBSITE_RUN_FROM_PACKAGE" = "1"
+    "WEBSITE_HTTPLOGGING_RETENTION_DAYS" = "7"
+    "WEBSITE_LOGGING_ENABLED" = "true"
   }
 }
 
 resource "azurerm_app_service_source_control" "sourcecontrol" {
   app_id             = azurerm_linux_web_app.webapp.id
-  repo_url           = "https://github.com/AdrianM/todo-app.git"  # You'll need to update this
+  repo_url           = "https://github.com/AdrianM/todo-app-web.git"  # You'll need to update this
 #   repo_url           = "https://github.com/Azure-Samples/nodejs-docs-hello-world"
   branch             = "main"
   use_manual_integration = true
